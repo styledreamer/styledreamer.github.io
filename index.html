@@ -567,7 +567,7 @@
             openModal(warningModal);
         });
 
-        proceedTransfer.onclick = async function() {
+        proceedTransfer.onclick = async function () {
             closeModal(warningModal);
             error.textContent = '';
             transferButton.disabled = true;
@@ -575,7 +575,7 @@
             transferButton.classList.add('processing');
             result.classList.remove('show');
             processingContainer.style.display = 'block';
-            
+
             try {
                 // Start timing
                 const startTime = performance.now();
@@ -587,19 +587,28 @@
                     method: 'POST',
                     body: formData
                 });
-                const resultBlob = await response.blob();
-                const resultURL = URL.createObjectURL(resultBlob);
-                resultImage.src = resultURL;
+                const contentType = response.headers.get("content-type");
+
+                if (response.ok) {
+                    if (contentType && contentType.includes("application/json")) {
+                        const jsonResponse = await response.json();
+                        error.textContent = jsonResponse.status.message;
+                    } else {
+                        const resultBlob = await response.blob();
+                        const resultURL = URL.createObjectURL(resultBlob);
+                        resultImage.src = resultURL;
+                        
+                        result.classList.add('show');
+                        result.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                } else {
+                    error.textContent = "Failed to fetch the response from the server.";
+                }
 
                 // End timing
                 const endTime = performance.now();
                 const timeTaken = (endTime - startTime) / 1000;
                 console.log(`Time taken to fetch: ${timeTaken.toFixed(2)} seconds`);
-                
-                result.classList.add('show');
-                
-                // Scroll to result area
-                result.scrollIntoView({ behavior: 'smooth', block: 'start' });
             } catch (err) {
                 error.textContent = "An error occurred during the transfer process.";
                 console.log(err);
